@@ -1,10 +1,12 @@
 import 'dart:developer';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_project/src/view/auth/sign_up_screen.dart';
 import 'package:firebase_project/src/view/home/home_screen.dart';
 import 'package:firebase_project/src/widget/textfield_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
+      body: SingleChildScrollView(
         child: Column(
           // mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -63,10 +65,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       if (credential.user!.getIdToken() != null) {
                         // ignore: use_build_context_synchronously
-                        Navigator.push(
+                        Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const HomeScreen()));
+                                builder: (context) => HomeScreen()),
+                            (route) => false);
                       }
                     } on FirebaseAuthException catch (e) {
                       log(e.credential!.providerId);
@@ -97,7 +100,31 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   InkWell(
-                    onTap: () {},
+                    onTap: () async {
+                      // Trigger the authentication flow
+                      final GoogleSignInAccount? googleUser =
+                          await GoogleSignIn().signIn();
+
+                      // Obtain the auth details from the request
+                      final GoogleSignInAuthentication? googleAuth =
+                          await googleUser?.authentication;
+
+                      // Create a new credential
+                      final credential = GoogleAuthProvider.credential(
+                        accessToken: googleAuth?.accessToken,
+                        idToken: googleAuth?.idToken,
+                      );
+                      var userCredentail = await FirebaseAuth.instance
+                          .signInWithCredential(credential);
+                      if (userCredentail != null) {
+                        // ignore: use_build_context_synchronously
+                        Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => HomeScreen()),
+                            (route) => false);
+                      }
+                    },
                     child: const CircleAvatar(
                       child: Icon(
                         Icons.language,
@@ -108,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
             ),
-            const Spacer(),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -118,21 +145,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 TextButton(
                     onPressed: () async {
-                      try {
-                        final credential = await FirebaseAuth.instance
-                            .createUserWithEmailAndPassword(
-                          email: emailController.text,
-                          password: passwordController.text,
-                        );
-                      } on FirebaseAuthException catch (e) {
-                        if (e.code == 'weak-password') {
-                          print('The password provided is too weak.');
-                        } else if (e.code == 'email-already-in-use') {
-                          print('The account already exists for that email.');
-                        }
-                      } catch (e) {
-                        print(e);
-                      }
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SignUpScreen(),
+                          ));
                     },
                     child: const Text("Create account"))
               ],
