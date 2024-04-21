@@ -43,7 +43,7 @@ class HomeScreen extends StatelessWidget {
               },
               title: const Text('Create Course'),
               trailing: const Icon(Icons.file_copy),
-            )
+            ),
           ]),
         ),
       ),
